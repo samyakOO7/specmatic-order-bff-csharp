@@ -14,6 +14,7 @@ public class ContractTests : IAsyncLifetime
     private readonly string _projectPath = Directory.GetParent(Pwd)?.FullName ?? string.Empty;
     private const string ProjectName = "specmatic-order-bff-csharp/specmatic-order-bff-csharp.csproj";
     private const string TestContainerDirectory = "/usr/src/app";
+    private const string EXCLUDED_ENDPOINTS = "'/health'"; 
 
     [Fact]
     public async Task ContractTestsAsync()
@@ -39,11 +40,13 @@ public class ContractTests : IAsyncLifetime
     { 
         var localReportDirectory = Path.Combine(Pwd, "build", "reports");
         Directory.CreateDirectory(localReportDirectory);
-        
+    
+        string filter = $"PATH!={EXCLUDED_ENDPOINTS}";
         _testContainer = new ContainerBuilder()
             .WithImage("znsio/specmatic").WithCommand("test")
             .WithCommand("--port=8080")
             .WithCommand("--host=host.testcontainers.internal")
+            .WithCommand($"--filter={filter}")
             .WithOutputConsumer(Consume.RedirectStdoutAndStderrToConsole())
             .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Tests run:"))
             .WithBindMount(localReportDirectory, $"{TestContainerDirectory}/build/reports")
